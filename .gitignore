@@ -1,0 +1,24 @@
+# Zig
+zig-out/
+.zig-cache/
+*.zig-test*
+
+# Build
+*.o
+*.exe
+*.out
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
