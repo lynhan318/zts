@@ -1,3 +1,6 @@
+//https://www.youtube.com/watch?v=0c8b7YfsBKs&list=WL&index=1&t=627s
+//https://github.com/james-orcales/pratt-parser-tutorial
+
 const std = @import("std");
 const zts = @import("zts");
 

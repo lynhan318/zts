@@ -7,13 +7,22 @@ pub const TokenType = enum(u8) {
     Star,
     Slash,
     Assign,
+    QuestionMark,
+    Not,
     Equals,
     OpenParen,
     CloseParen,
     OpenBrace,
     CloseBrace,
+    OpenSquareBracket,
+    CloseSquareBracket,
     Semicolon,
     Arrow, // Arrow: "=>"
+    Or,
+    And,
+    NotEquals,
+    LessEqual,
+    GreaterEqual,
     // Literals & Keywords
     Identifier,
     Number,
@@ -46,6 +55,7 @@ pub const Lexer = struct {
     line: u32,
     col: u32,
 
+    const Self = @This();
     const keywords = std.StaticStringMap(TokenType).initComptime(.{
         .{ "let", .KeywordLet },
         .{ "function", .KeywordFunction },
@@ -59,7 +69,7 @@ pub const Lexer = struct {
         return .{ .source = source, .index = 0, .line = 0, .col = 0 };
     }
 
-    pub fn next(self: *@This()) Token {
+    pub fn next(self: *Self) Token {
         self.skipWhitespace();
         self.skipEndline();
         if (self.index >= self.source.len) return self.makeToken(.Eof, self.index, self.line, self.col);
@@ -71,6 +81,8 @@ pub const Lexer = struct {
         return switch (c) {
             '+' => self.makeToken(.Plus, startIndex, startLine, startCol),
             '-' => self.makeToken(.Minus, startIndex, startLine, startCol),
+            '?' => self.makeToken(.QuestionMark, startIndex, startLine, startCol),
+            '!' => self.makeToken(.Not, startIndex, startLine, startCol),
             '=' => {
                 if (self.match('>')) {
                     return self.makeToken(.Arrow, startIndex, startLine, startCol);
@@ -83,6 +95,12 @@ pub const Lexer = struct {
             ';' => self.makeToken(.Semicolon, startIndex, startLine, startCol),
             '*' => self.makeToken(.Star, startIndex, startLine, startCol),
             '/' => self.makeToken(.Slash, startIndex, startLine, startCol),
+            '(' => self.makeToken(.OpenParen, startIndex, startLine, startCol),
+            ')' => self.makeToken(.CloseParen, startIndex, startLine, startCol),
+            '{' => self.makeToken(.OpenBrace, startIndex, startLine, startCol),
+            '}' => self.makeToken(.CloseBrace, startIndex, startLine, startCol),
+            '[' => self.makeToken(.OpenSquareBracket, startIndex, startLine, startCol),
+            ']' => self.makeToken(.CloseSquareBracket, startIndex, startLine, startCol),
             '0'...'9' => {
                 while (std.ascii.isDigit(self.peek())) _ = self.advance();
                 return self.makeToken(.Number, startIndex, startLine, startCol);
@@ -100,7 +118,7 @@ pub const Lexer = struct {
         };
     }
 
-    pub fn makeToken(self: *@This(), tokenType: TokenType, startIndex: u32, startLine: u32, startCol: u32) Token {
+    pub fn makeToken(self: *Self, tokenType: TokenType, startIndex: u32, startLine: u32, startCol: u32) Token {
         return .{
             .tag = tokenType,
             .start = startIndex,
@@ -112,7 +130,7 @@ pub const Lexer = struct {
 
     /// Di chuyển con trỏ và trả về ký tự hiện tại.
     /// Cập nhật line/col khi gặp newline.
-    pub fn advance(self: *@This()) u8 {
+    fn advance(self: *Self) u8 {
         if (self.index >= self.source.len) return 0;
         const currentChar = self.source[self.index];
         self.index += 1;
@@ -120,14 +138,14 @@ pub const Lexer = struct {
         return currentChar;
     }
 
-    pub fn skipWhitespace(self: *@This()) void {
+    fn skipWhitespace(self: *Self) void {
         while (self.peek() == ' ') {
             self.index += 1;
             self.col += 1;
         }
     }
 
-    pub fn skipEndline(self: *@This()) void {
+    fn skipEndline(self: *Self) void {
         while (self.peek() == '\n') {
             self.index += 1;
             self.line += 1;
@@ -135,14 +153,14 @@ pub const Lexer = struct {
         }
     }
     /// Xem ký tự hiện tại mà không di chuyển con trỏ.
-    pub fn peek(self: @This()) u8 {
+    pub fn peek(self: Self) u8 {
         if (self.index >= self.source.len) return 0;
         return self.source[self.index];
     }
 
     /// Kiểm tra ký tự hiện tại có khớp với expected không.
     /// Nếu có, di chuyển con trỏ và trả về true.
-    pub fn match(self: *@This(), expected: u8) bool {
+    pub fn match(self: *Self, expected: u8) bool {
         if (self.index >= self.source.len) return false;
         if (self.source[self.index] == expected) {
             self.index += 1;
